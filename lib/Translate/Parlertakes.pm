@@ -47,6 +47,76 @@ Perhaps a little code snippet.
     ...
 =cut
 
+#  Looking at a keyboard, these are all of the neighboring letters.
+
+my %nearby_letters = (
+    q => [ qw/a s w/ ],
+    w => [ qw/q a s d e/ ],
+    e => [ qw/w s d f r/ ],
+    r => [ qw/e d f g t/ ],
+    t => [ qw/r f g h y/ ],
+    y => [ qw/t g h j u/ ],
+    u => [ qw/y h j k i/ ],
+    i => [ qw/u j k l o/ ],
+    o => [ qw/i k l p/ ],
+    p => [ qw/o l/ ],
+
+    a => [ qw/q w s x z/ ],
+    s => [ qw/q w e a d z x c/ ],
+    d => [ qw/w e r s f x c v/ ],
+    f => [ qw/e r t d g c v b/ ],
+    g => [ qw/r t y f h v b n/ ],
+    h => [ qw/t y u g j b n m/ ],
+    j => [ qw/y u i h k n m/ ],
+    k => [ qw/u i o j l m/ ],
+    l => [ qw/i o p k/ ],
+
+    z => [ qw/a s x/ ],
+    x => [ qw/z a s d c/ ],
+    c => [ qw/x s d f v/ ],
+    v => [ qw/c d f g b/ ],
+    b => [ qw/v f g h n/ ],
+    n => [ qw/b g h j m/ ],
+    m => [ qw/n h j k/ ],
+)
+
+#  Fascinating .. we can use egrep to find some good matches for mwssafe as
+#  follows:
+#
+#    $ egrep '^[mnhjk][wqasde][sqweadzxc][qweasdzxc][qwaszx][ertdfgcvb][wersdf]$' \
+#    > /usr/share/dict/words
+#    massage
+#    message
+#
+#  The second choice is the correct one, but we won't know which. If we look at
+#  'tue', we end of with many choices:
+#
+#    $ egrep '^[rtyfgh][yuihjk][wersdf]$' /usr/share/dict/words
+#    fie
+#    fir
+#    fur
+#    hid
+#    hie
+#    his
+#    hue
+#    rid
+#    rue
+#    rye
+#    the
+#    tie
+#
+#  This leaves us with an interesting further refinement .. picking the word
+#  with the fewest differences from the original. Using that logic, hue, rue,
+#  the and tie all differ by just one letter. We might be able to go with 'the'
+#  based on word frequency ..
+#
+#  So our decode of the original message might end up looking like this:
+#
+#    MY (MESSAGE|MASSAGE) TO (HUE|RUE|THE|TIE) BITCH ON TWITTER ..
+#
+#  This isn't ideal, but it quickly shows what possibilities there are.
+
+
 sub decode
 {
 }
