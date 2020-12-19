@@ -4,6 +4,8 @@ use 5.006;
 use strict;
 use warnings;
 
+our $ERROR;
+
 =head1 NAME
 
 Translate::Parlertakes - Translate into and out of @parlertakes lingo
@@ -78,7 +80,7 @@ my %nearby_letters = (
     b => [ qw/v f g h n/ ],
     n => [ qw/b g h j m/ ],
     m => [ qw/n h j k/ ],
-)
+);
 
 #  Fascinating .. we can use egrep to find some good matches for mwssafe as
 #  follows:
@@ -148,8 +150,69 @@ my %nearby_letters = (
 #  This would be our way of saying, "We didn't find an exact match at all, but
 #  we got a good match at -1."
 
+#  Create an object. This does nothing except make sure we have egrep and that
+#  we can find the dictionary file.
+
+my $egrep_prog      = 'egrep';
+my $dictionary_file = '/usr/share/dict/words';
+
+sub new
+{
+    my ( $class ) = shift;
+
+    my @test_egrep = `$egrep_prog -v 2>&1`;
+    if ( $test_egrep[0] !~ /Usage/ ) {
+
+        $ERROR = "Unable to run egrep";
+        return undef;
+    }
+
+    if ( !-e $dictionary_file ) {
+
+        $ERROR = "Unable to find dictionary file";
+        return undef;
+    }
+
+    my $self = {};
+    bless $self, $class;
+
+    return $self;
+}
+
 sub decode
 {
+    my ( $self, $string ) = @_;
+
+    #  Split the input sentence into lower case words.
+
+    my @words = map { lc } split ( /\s+/, $string );
+
+    #  Return an arrayref with the original word and the results. There could
+    #  be a) an exact match (means the word was found in the dictionary), b) a
+    #  same-length match, and c) matches that are +1 and -1 in length from the
+    #  original.
+
+    my @results =
+      map { { orig => $_, result => $self->_decode_word($_) } } @words;
+    return \@results;
+}
+
+sub _decode_word
+{
+    my ( $self, $word ) = @_;
+
+    #  See if the word's in the dictionary. if so, we're done.
+
+    my @result = `$egrep_prog $word $dictionary_file`;
+    if ( @result == 1 && $result[0] eq $word ) {
+
+        return ( { exact => 1 } );
+    }
+
+    #  OK, it's not in the dictionary. We're going to assume that one or more
+    #  of the letters were mis-typed, so we'll replace each letter with all of
+    #  the letters around the sample letter, and see if we get any matches.
+
 }
 
 sub encode
