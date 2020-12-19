@@ -203,7 +203,14 @@ sub _decode_word
 
     #  See if the word's in the dictionary. if so, we're done.
 
-    my @result = `$egrep_prog $word $dictionary_file`;
+    #  We need to find an exact match, so there's an anchor at the front and
+    #  back with ^ and $. Since we're inside back-ticks, the '$' at the end
+    #  needs to be escaped. And since egrep sends output to stdout, we don't
+    #  need to do anything with piping. Finally, egrep sends a list with
+    #  newlines at the end, so we have to chomp each line before checking for a
+    #  match.
+
+    my @result = map { chomp; $_ } `$egrep_prog '^$word\$' $dictionary_file`;
     if ( @result == 1 && $result[0] eq $word ) {
 
         return ( { exact => 1 } );
@@ -213,6 +220,7 @@ sub _decode_word
     #  of the letters were mis-typed, so we'll replace each letter with all of
     #  the letters around the sample letter, and see if we get any matches.
 
+    return undef;
 }
 
 sub encode
