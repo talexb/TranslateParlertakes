@@ -220,6 +220,42 @@ sub _decode_word
     #  of the letters were mis-typed, so we'll replace each letter with all of
     #  the letters around the sample letter, and see if we get any matches.
 
+    my @c = split ( //, $word );
+    my @poss = map { join ( '', $_, @{ $nearby_letters{ $_ } } ) } @c;
+    my $regex = join ( '', map { "[$_]" } @poss );
+
+    @result = map { chomp; $_ } `$egrep_prog '^$regex\$' $dictionary_file`;
+
+    #  We now have a list of possible matches. We now need to score those
+    #  matches against the original word to find the ones that match the best
+    #  (and there may be more than one).
+
+    my @score;
+    foreach my $res ( @result ) {
+
+        my @r = split ( //, $res );
+        my $match = $#c+1;
+
+        foreach my $o ( 0..$#c ) {
+
+            if ( $c[ $o ] eq $r[ $o ] ) { $match--; }
+        }
+        push ( @{ $score[ $match ] }, $res );
+    }
+
+    #  We now have a list of lists with words in the slots relative to how few
+    #  they didn't match with the original -- we already know there were no
+    #  exact matches, so the best outcome is that we have some matches in
+    #  offset 1. We'll take the best outcome (the lowest number).
+
+    for my $o ( 1..$#c+1 ) {
+
+        if ( defined $score[ $o ] ) {
+
+            return ( { $o => $score[ $o ] } );
+        }
+    }
+
     return undef;
 }
 
