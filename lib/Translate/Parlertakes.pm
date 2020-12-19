@@ -116,6 +116,37 @@ my %nearby_letters = (
 #
 #  This isn't ideal, but it quickly shows what possibilities there are.
 
+#  Another refinement is to add logic to see if we can add a letter as
+#  necessary. Another recent message had THER instead of THERE, and cycling
+#  through the possibilities (adding a letter in all of the positions) we did
+#  end up with the intended word THERE.
+
+#  Perhaps the result could be something like an array of hashes that would
+#  show matches with the right length (0 length difference), possibly matches
+#  (still with the right length), and then possible matches with one less
+#  and/or one more letter. The caller would have to figure out how to display
+#  the results.
+#
+#  So the decode above could return something like this:
+#
+#  $result = [
+#    { orig => 'MY',      exact => 1 },  #  found in dict
+#    { orig => 'MWSSAFE', 0 => [ qw/MESSAGE MASSAGE/ ] },
+#                              #  two possibilities
+#    { orig => 'TO',      exact => 1 },
+#    { orig => 'TUE',     0 => [ qw/HUE RUE THE TIE ] },
+#                              #  four poss.
+#
+#  For the mangled word OREIVATE (PRIVATE), we'd show that there were no exact
+#  matches, but we did find one at -1 (that is, by deleting a letter):
+#
+#  $result = [
+#    ..
+#    { orig => 'OREIVATE', 0 => [], -1 => [ qw/PRIVATE/ ] }
+#    ..
+#
+#  This would be our way of saying, "We didn't find an exact match at all, but
+#  we got a good match at -1."
 
 sub decode
 {
