@@ -213,7 +213,7 @@ sub _decode_word
     my @result = map { chomp; $_ } `$egrep_prog '^$word\$' $dictionary_file`;
     if ( @result == 1 && $result[0] eq $word ) {
 
-        return ( { exact => 1 } );
+        return ( { exact => 1, 0 => \@result } );
     }
 
     #  OK, it's not in the dictionary. We're going to assume that one or more
@@ -225,6 +225,14 @@ sub _decode_word
     my $regex = join ( '', map { "[$_]" } @poss );
 
     @result = map { chomp; $_ } `$egrep_prog '^$regex\$' $dictionary_file`;
+
+    #  We might have an exact match -- like when letters have been transposed.
+    #  That would be cool. (So, premissions -> permissions.)
+
+    if ( @result == 1 && $result[0] eq $word ) {
+
+        return ( { 0 => \@result } );
+    }
 
     #  We now have a list of possible matches. We now need to score those
     #  matches against the original word to find the ones that match the best
@@ -255,6 +263,9 @@ sub _decode_word
             return ( { $o => $score[ $o ] } );
         }
     }
+
+    #  OK .. no matches for words of the same length. Now we have to try adding
+    #  a letter .. and deleting a letter.
 
     return undef;
 }
