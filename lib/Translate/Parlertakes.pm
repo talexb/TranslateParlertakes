@@ -221,10 +221,7 @@ sub _decode_word
     #  the letters around the sample letter, and see if we get any matches.
 
     my @c = split ( //, $word );
-    my @poss = map { join ( '', $_, @{ $nearby_letters{ $_ } } ) } @c;
-    my $regex = join ( '', map { "[$_]" } @poss );
-
-    @result = map { chomp; $_ } `$egrep_prog '^$regex\$' $dictionary_file`;
+    @result = _try_this ( @c );
 
     #  We might have an exact match -- like when letters have been transposed.
     #  That would be cool. (So, premissions -> permissions.)
@@ -251,6 +248,43 @@ sub _decode_word
         push ( @{ $score[ $match ] }, $res );
     }
 
+    #  Next, we're going to try deleting one of the letters to see if we can a
+    #  better match. This is going to be a little trickier, because we'll have
+    #  to delete a letter, and then score the resulting word all in one loop.
+
+    foreach my $d ( 0..$#c ) {
+
+        my @w;
+        if ( $d > 0 ) {
+
+            push( @w, @c[ 0 .. $d - 1 ] );
+            push( @w, @c[ $d + 1 .. $#c ] );
+
+        } else {
+
+            push( @w, @c[ 1 .. $#c ] );
+        }
+
+        @result = _try_this ( @w );
+        
+        #  Now we score this guess (using code copied from above. XXX Refactor
+        #  here, please. Note that we are starting with the original length
+        #  because we're scoring this higher by one because we've deleted one
+        #  of the characters.
+
+        foreach my $res ( @result ) {
+
+            my @r = split ( //, $res );
+            my $match = $#c+1;      #  original length
+
+            foreach my $o ( 0..$#w ) {
+
+                if ( $w[ $o ] eq $r[ $o ] ) { $match--; }
+            }
+            push ( @{ $score[ $match ] }, $res );
+        }
+    }
+
     #  We now have a list of lists with words in the slots relative to how few
     #  they didn't match with the original -- we already know there were no
     #  exact matches, so the best outcome is that we have some matches in
@@ -268,6 +302,18 @@ sub _decode_word
     #  a letter .. and deleting a letter.
 
     return undef;
+}
+
+sub _try_this
+{
+    my ( @c ) = @_;
+
+    my @poss = map { join ( '', $_, @{ $nearby_letters{ $_ } } ) } @c;
+    my $regex = join ( '', map { "[$_]" } @poss );
+
+    my @result = map { chomp; $_ } `$egrep_prog '^$regex\$' $dictionary_file`;
+
+    return ( @result );
 }
 
 sub encode
