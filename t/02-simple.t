@@ -28,17 +28,17 @@ use Translate::Parlertakes;
         is( $result->[$num]->{orig},
             $expected_words[$num], 'Original matches' );
 
-        #  Because we're working with know data, we're expecting two exact
-        #  matches, and one match of off by one with four choices.
+        #  Because we're working with known data, we're expecting two exact
+        #  matches, and one off by one match with four choices.
 
         if ( exists $result->[$num]->{result}->{exact} ) {
 
-            ok( 1, "Exact match for $expected_words[$num]" );
+            ok( 1, "Exact match for '$expected_words[$num]'" );
 
         } else {
 
             ok( defined( $result->[$num]->{result}->{1} ),
-                'Got a match for off by one' );
+                "Got an off by one match for '$expected_words[$num]'" );
             is( scalar @{ $result->[$num]->{result}->{1} },
                 4, 'Correct number of results' );
         }
