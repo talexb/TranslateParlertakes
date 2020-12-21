@@ -236,17 +236,7 @@ sub _decode_word
     #  (and there may be more than one).
 
     my @score;
-    foreach my $res ( @result ) {
-
-        my @r = split ( //, $res );
-        my $match = $#c+1;
-
-        foreach my $o ( 0..$#c ) {
-
-            if ( $c[ $o ] eq $r[ $o ] ) { $match--; }
-        }
-        push ( @{ $score[ $match ] }, $res );
-    }
+    _score_this ( \@c, \@result, $#c+1, \@score );
 
     #  Next, we're going to try deleting one of the letters to see if we can a
     #  better match. This is going to be a little trickier, because we'll have
@@ -267,22 +257,12 @@ sub _decode_word
 
         @result = _try_this ( @w );
         
-        #  Now we score this guess (using code copied from above. XXX Refactor
-        #  here, please. Note that we are starting with the original length
-        #  because we're scoring this higher by one because we've deleted one
-        #  of the characters.
+        #  Now we score this guess (using code copied from above.  Note that we
+        #  are starting with the original length ($#c+1) because we're scoring
+        #  this higher by one because we've deleted one of the original
+        #  characters.
 
-        foreach my $res ( @result ) {
-
-            my @r = split ( //, $res );
-            my $match = $#c+1;      #  original length
-
-            foreach my $o ( 0..$#w ) {
-
-                if ( $w[ $o ] eq $r[ $o ] ) { $match--; }
-            }
-            push ( @{ $score[ $match ] }, $res );
-        }
+        _score_this ( \@w, \@result, $#c+1, \@score );
     }
 
     #  We now have a list of lists with words in the slots relative to how few
@@ -314,6 +294,32 @@ sub _try_this
     my @result = map { chomp; $_ } `$egrep_prog '^$regex\$' $dictionary_file`;
 
     return ( @result );
+}
+
+sub _score_this
+{
+    #  Passing in the word we're starting with, the array of results from
+    #  egrep, the length of the match we're looking for, and the score arrayref
+    #  that gets used to two times that this routine is called.
+
+    my ( $word, $result, $len, $score ) = @_;
+
+    foreach my $res ( @$result ) {
+
+        my @r = split ( //, $res );
+        my $match = $len;
+
+        #  Every time a character matches between the word we're starting with
+        #  and the egrep result, we reduce the match count. Lower is better.
+
+        foreach my $o ( 0..$#$word ) {
+
+            if ( $word->[ $o ] eq $r[ $o ] ) { $match--; }
+        }
+        push ( @{ $score->[ $match ] }, $res );
+    }
+
+    #  Nothing's returned because the score is passing back the results.
 }
 
 sub encode
