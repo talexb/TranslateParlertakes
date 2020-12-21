@@ -28,57 +28,52 @@ use Translate::Parlertakes;
 
     my @decoded;
 
-  TODO:
-    {
-        local $TODO = 'WIP';
+    my @expected_words = split( /\s/, $sentence );
 
-        my @expected_words = split( /\s/, $sentence );
+  WORD:
+    foreach my $num ( 0 .. $#expected_words ) {
 
-      WORD:
-        foreach my $num ( 0 .. $#expected_words ) {
+        if ( exists $result->[$num]->{result}->{exact} ) {
 
-            if ( exists $result->[$num]->{result}->{exact} ) {
+            ok( 1, "Exact match for '$expected_words[$num]'" );
+            push( @decoded, $result->[$num]->{result}->{0}->[0] );
 
-                ok( 1, "Exact match for '$expected_words[$num]'" );
-                push ( @decoded, $result->[$num]->{result}->{0}->[0] );
+        } else {
 
-            } else {
+            foreach my $p ( 0 .. length( $expected_words[$num] ) ) {
 
-                foreach my $p ( 0 .. length ( $expected_words[$num] ) ) {
+                if ( defined( $result->[$num]->{result}->{$p} ) ) {
 
-                    if ( defined( $result->[$num]->{result}->{$p} ) ) {
+                    my $count = scalar @{ $result->[$num]->{result}->{$p} };
+                    ok( 1,
+                            "Got $count off by "
+                          . ( $p + 1 )
+                          . " matches for '$expected_words[$num]'" );
 
-                        my $count = scalar @{ $result->[$num]->{result}->{$p} };
-                        ok( 1,
-                                "Got $count off by "
-                              . ( $p + 1 )
-                              . " matches for '$expected_words[$num]'" );
+                    if ( @{ $result->[$num]->{result}->{$p} } == 1 ) {
 
-                        if ( @{ $result->[$num]->{result}->{$p} } == 1 ) {
+                        push( @decoded, @{ $result->[$num]->{result}->{$p} } );
 
-                            push ( @decoded, @{ $result->[$num]->{result}->{$p} } );
+                    } else {
 
-                        } else {
-
-                            push(
-                                @decoded,
-                                join(
-                                    '', '(',
-                                    join( '|',
-                                        @{ $result->[$num]->{result}->{$p} } ),
-                                    ')'
-                                )
-                            );
-                        }
-                        next WORD;
+                        push(
+                            @decoded,
+                            join(
+                                '', '(',
+                                join( '|',
+                                    @{ $result->[$num]->{result}->{$p} } ),
+                                ')'
+                            )
+                        );
                     }
+                    next WORD;
                 }
-                fail ( "Unable to get match for '$expected_words[$num]'" );
             }
+            fail("Unable to get match for '$expected_words[$num]'");
         }
     }
 
-    # diag ( "Decoded sentence is '" . join ( ' ', @decoded ) . "'" );
+    diag ( "Decoded sentence is '" . join ( ' ', @decoded ) . "'" );
 
     done_testing;
 }
