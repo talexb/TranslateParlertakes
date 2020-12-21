@@ -17,6 +17,7 @@ Version 0.01
 =cut
 
 our $VERSION = '0.01';
+our @EXPORT = qw/new decode encode/;
 
 
 =head1 SYNOPSIS
