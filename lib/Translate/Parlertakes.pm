@@ -211,10 +211,23 @@ sub _decode_word
     #  newlines at the end, so we have to chomp each line before checking for a
     #  match.
 
-    my @result = map { chomp; $_ } `$egrep_prog '^$word\$' $dictionary_file`;
-    if ( @result == 1 && $result[0] eq $word ) {
+    my @result;
+    {
+        #  It could be that the apostrophe is missing from a word, as in the
+        #  case of WASNT, so I'm adding a possible apostrophe. If the word was
+        #  BENT, the extra character will be skipped and we should be OK.
 
-        return ( { exact => 1, 0 => \@result } );
+        my $word2 = $word;
+        if ( $word2 =~ /nt$/i ) {
+
+            $word2 =~ s/nt$/n'?t/i;
+        }
+
+        @result = map { chomp; $_ } `$egrep_prog "^$word2\$" $dictionary_file`;
+        if ( @result == 1 && $result[0] =~ $word2 ) {
+
+            return ( { exact => 1, 0 => \@result } );
+        }
     }
 
     #  OK, it's not in the dictionary. We're going to assume that one or more
