@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use FindBin qw/$Bin/;
+use List::Util qw/uniq/;
 
 our $ERROR;
 
@@ -235,7 +236,7 @@ sub _decode_word
         #  2020-1229: Add the names file first so that if we get a hit there,
         #  but not in the dictionary file, we are still OK.
 
-        @result = map { chomp; $_ }
+        @result = uniq map { chomp; $_ }
           `$egrep_prog -h "^$word2\$" $names_file $dictionary_file`;
         if ( @result == 1 && $result[0] =~ $word2 ) {
 
