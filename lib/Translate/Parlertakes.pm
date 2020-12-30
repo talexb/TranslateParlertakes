@@ -161,6 +161,8 @@ my $egrep_prog      = 'egrep';
 my $dictionary_file = '/usr/share/dict/words';
 my $names_file      = "$Bin/../lib/Translate/names";    #  May need to change.
 
+my %proper_names;
+
 sub new
 {
     my ( $class ) = shift;
@@ -183,6 +185,10 @@ sub new
         $ERROR = "Unable to find names file names_file";
         return undef;
     }
+
+    open ( my $fh, $names_file );
+    %proper_names = map { chomp; $_ => undef } grep { length > 2 } <$fh>;
+    close ( $fh );
 
     my $self = {};
     bless $self, $class;
@@ -240,6 +246,13 @@ sub _decode_word
           `$egrep_prog -h "^$word2\$" $names_file $dictionary_file`;
         if ( @result == 1 && $result[0] =~ $word2 ) {
 
+            #  2020-1229: If we got an exact match, and if this is a proper
+            #  name, let's capitalize it.
+
+            if ( exists $proper_names{ $result[0] } ) {
+
+                $result[0] = ucfirst ( $result[0] );
+            }
             return ( { exact => 1, 0 => \@result } );
         }
     }
