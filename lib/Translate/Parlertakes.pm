@@ -4,6 +4,8 @@ use 5.006;
 use strict;
 use warnings;
 
+use FindBin qw/$Bin/;
+
 our $ERROR;
 
 =head1 NAME
@@ -156,6 +158,7 @@ my %nearby_letters = (
 
 my $egrep_prog      = 'egrep';
 my $dictionary_file = '/usr/share/dict/words';
+my $names_file      = "$Bin/../lib/Translate/names";    #  May need to change.
 
 sub new
 {
@@ -170,7 +173,13 @@ sub new
 
     if ( !-e $dictionary_file ) {
 
-        $ERROR = "Unable to find dictionary file";
+        $ERROR = "Unable to find dictionary file dictionary_file";
+        return undef;
+    }
+
+    if ( !-e $names_file ) {
+
+        $ERROR = "Unable to find names file names_file";
         return undef;
     }
 
@@ -223,7 +232,11 @@ sub _decode_word
             $word2 =~ s/nt$/n'?t/i;
         }
 
-        @result = map { chomp; $_ } `$egrep_prog "^$word2\$" $dictionary_file`;
+        #  2020-1229: Add the names file first so that if we get a hit there,
+        #  but not in the dictionary file, we are still OK.
+
+        @result = map { chomp; $_ }
+          `$egrep_prog -h "^$word2\$" $names_file $dictionary_file`;
         if ( @result == 1 && $result[0] =~ $word2 ) {
 
             return ( { exact => 1, 0 => \@result } );
@@ -305,7 +318,8 @@ sub _try_this
     my @poss = map { join ( '', $_, @{ $nearby_letters{ $_ } } ) } @c;
     my $regex = join ( '', map { "[$_]" } @poss );
 
-    my @result = map { chomp; $_ } `$egrep_prog '^$regex\$' $dictionary_file`;
+    my @result =
+      map { chomp; $_ } `$egrep_prog -h "^$regex\$" $names_file $dictionary_file`;
 
     return ( @result );
 }
