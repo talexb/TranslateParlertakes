@@ -160,6 +160,7 @@ my %nearby_letters = (
 my $egrep_prog      = 'egrep';
 my $dictionary_file = '/usr/share/dict/words';
 my $names_file      = "$Bin/../lib/Translate/names";    #  May need to change.
+my $abbrs_file      = "$Bin/../lib/Translate/abbreviations";
 
 my %proper_names;
 
@@ -176,13 +177,19 @@ sub new
 
     if ( !-e $dictionary_file ) {
 
-        $ERROR = "Unable to find dictionary file dictionary_file";
+        $ERROR = "Unable to find dictionary file $dictionary_file";
         return undef;
     }
 
     if ( !-e $names_file ) {
 
-        $ERROR = "Unable to find names file names_file";
+        $ERROR = "Unable to find names file $names_file";
+        return undef;
+    }
+
+    if ( !-e $abbrs_file ) {
+
+        $ERROR = "Unable to find abbreviations file $abbrs_file";
         return undef;
     }
 
