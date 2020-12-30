@@ -229,6 +229,14 @@ sub _decode_word
 {
     my ( $self, $word ) = @_;
 
+    #  2020-1230: But first .. if this is just a number, it gets a free pass.
+    #  We're not going to try to disambiguate a number.
+
+    if ( $word =~ /^\d+$/ ) {
+
+        return ( { exact => 1, 0 => [ $word ] } );
+    }
+
     #  See if the word's in the dictionary. if so, we're done.
 
     #  We need to find an exact match, so there's an anchor at the front and
