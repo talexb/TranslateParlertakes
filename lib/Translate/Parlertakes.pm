@@ -162,7 +162,7 @@ my $dictionary_file = '/usr/share/dict/words';
 my $names_file      = "$Bin/../lib/Translate/names";    #  May need to change.
 my $abbrs_file      = "$Bin/../lib/Translate/abbreviations";
 
-my %proper_names;
+my ( %proper_names, %abbrs );
 
 sub new
 {
@@ -195,6 +195,10 @@ sub new
 
     open ( my $fh, $names_file );
     %proper_names = map { chomp; $_ => undef } grep { length > 2 } <$fh>;
+    close ( $fh );
+
+    open ( $fh, $abbrs_file );
+    %abbrs = map { chomp; $_ => undef } grep { length > 2 } <$fh>;
     close ( $fh );
 
     my $self = {};
@@ -249,8 +253,10 @@ sub _decode_word
         #  2020-1229: Add the names file first so that if we get a hit there,
         #  but not in the dictionary file, we are still OK.
 
+        #  2020-1230: Add the abbreviations file.
+
         @result = uniq map { chomp; $_ }
-          `$egrep_prog -h "^$word2\$" $names_file $dictionary_file`;
+          `$egrep_prog -h "^$word2\$" $names_file $abbrs_file $dictionary_file`;
         if ( @result == 1 && $result[0] =~ $word2 ) {
 
             #  2020-1229: If we got an exact match, and if this is a proper
@@ -260,6 +266,15 @@ sub _decode_word
 
                 $result[0] = ucfirst ( $result[0] );
             }
+
+            #  2020-1230: Same thing for abbreviations, except we're going to
+            #  capitalize the entire word.
+
+            if ( exists $abbrs{ $result[0] } ) {
+
+                $result[0] = uc ( $result[0] );
+            }
+
             return ( { exact => 1, 0 => \@result } );
         }
     }
@@ -340,7 +355,7 @@ sub _try_this
     my $regex = join ( '', map { "[$_]" } @poss );
 
     my @result =
-      map { chomp; $_ } `$egrep_prog -h "^$regex\$" $names_file $dictionary_file`;
+      map { chomp; $_ } `$egrep_prog -h "^$regex\$" $names_file $abbrs_file $dictionary_file`;
 
     return ( @result );
 }
