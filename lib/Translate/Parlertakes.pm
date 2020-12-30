@@ -259,22 +259,7 @@ sub _decode_word
           `$egrep_prog -h "^$word2\$" $names_file $abbrs_file $dictionary_file`;
         if ( @result == 1 && $result[0] =~ $word2 ) {
 
-            #  2020-1229: If we got an exact match, and if this is a proper
-            #  name, let's capitalize it.
-
-            if ( exists $proper_names{ $result[0] } ) {
-
-                $result[0] = ucfirst ( $result[0] );
-            }
-
-            #  2020-1230: Same thing for abbreviations, except we're going to
-            #  capitalize the entire word.
-
-            if ( exists $abbrs{ $result[0] } ) {
-
-                $result[0] = uc ( $result[0] );
-            }
-
+            $result[0] = _maybe_adjust_case ( $result[0] );
             return ( { exact => 1, 0 => \@result } );
         }
     }
@@ -300,6 +285,15 @@ sub _decode_word
 
     my @score;
     _score_this ( \@c, \@result, $#c+1, \@score );
+
+    #  2020-1230: At this point, we might have a single match that's only off
+    #  by one (like SOROD -> SOROS) .. let's try that.
+
+    if ( defined $score[1] && @{ $score[1] } == 1 ) {
+
+        $score[1]->[0] = _maybe_adjust_case ( $score[1]->[0] );
+        return ( { 1 => [ $score[1]->[0] ] } );
+    }
 
     #  Next, we're going to try deleting one of the letters to see if we can a
     #  better match. This is going to be a little trickier, because we'll have
@@ -384,6 +378,29 @@ sub _score_this
     }
 
     #  Nothing's returned because the score is passing back the results.
+}
+
+sub _maybe_adjust_case
+{
+    my ($word) = @_;
+
+    #  2020-1229: If we got an exact match, and if this is a proper name, let's
+    #  capitalize it.
+
+    if ( exists $proper_names{$word} ) {
+
+        $word = ucfirst($word);
+    }
+
+    #  2020-1230: Same thing for abbreviations, except we're going to
+    #  capitalize the entire word.
+
+    if ( exists $abbrs{$word} ) {
+
+        $word = uc($word);
+    }
+
+    return ($word);
 }
 
 sub encode
