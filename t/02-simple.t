@@ -39,8 +39,6 @@ use Translate::Parlertakes;
 
             ok( defined( $result->[$num]->{result}->{1} ),
                 "Got an off by one match for '$expected_words[$num]'" );
-            is( scalar @{ $result->[$num]->{result}->{1} },
-                4, 'Correct number of results' );
         }
     }
 

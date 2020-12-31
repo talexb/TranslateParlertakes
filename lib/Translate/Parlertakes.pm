@@ -55,6 +55,13 @@ Perhaps a little code snippet.
 
 #  Looking at a keyboard, these are all of the neighboring letters.
 
+#  2020-1230: The '.' entry in this hash is special: At one point, while
+#  looking for matching words, I use the '.' meta-character; this is processed
+#  in the _try_this routine. But instead of adding an exception for that
+#  character in the two map statements, I just have that meta-character map to
+#  the range of all letters. So I've complicated the data (here), but
+#  simplified the code later on.
+
 my %nearby_letters = (
     q => [ qw/a s w/ ],
     w => [ qw/q a s d e/ ],
@@ -84,6 +91,8 @@ my %nearby_letters = (
     b => [ qw/v f g h n/ ],
     n => [ qw/b g h j m/ ],
     m => [ qw/n h j k/ ],
+
+    '.' => [ qw/a-z/ ],     #  Use this for 'any' letter.
 );
 
 #  Fascinating .. we can use egrep to find some good matches for mwssafe as
@@ -332,6 +341,33 @@ sub _decode_word
         _score_this ( \@w, \@result, $#c+1, \@score );
     }
 
+    #  Now, instead of deleting a letter, we're going add a free character in
+    #  each of the possible positions. So 'DETING' might be recognized as
+    #  'SETTING' (from 2020-1222.txt).
+
+    foreach my $d ( 0..$#c ) {
+
+        my @w;
+
+        if ( $d == 0 ) {
+
+            @w = ( '.', @c );
+
+        } elsif ( $d == $#c ) {
+
+            @w = ( @c, '.' );
+
+        } else {
+
+            @w = ( @c[ 0..($d-1) ], '.', @c[ $d..$#c ] );
+        }
+
+        #  As above, try this combination, then score the result.
+
+        @result = _try_this ( @w );
+        _score_this ( \@w, \@result, $#c+1, \@score );
+    }
+
     #  We now have a list of lists with words in the slots relative to how few
     #  they didn't match with the original -- we already know there were no
     #  exact matches, so the best outcome is that we have some matches in
@@ -355,8 +391,8 @@ sub _try_this
 {
     my ( @c ) = @_;
 
-    my @poss = map { join ( '', $_, @{ $nearby_letters{ $_ } } ) } @c;
-    my $regex = join ( '', map { "[$_]" } @poss );
+    my @poss = map { join( '', $_, @{ $nearby_letters{$_} } ) } @c;
+    my $regex = join( '', map { "[$_]" } @poss );
 
     my @result =
       map { chomp; $_ } `$egrep_prog -h "^$regex\$" $names_file $abbrs_file $dictionary_file`;
