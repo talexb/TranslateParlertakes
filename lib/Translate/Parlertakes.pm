@@ -253,13 +253,15 @@ sub _decode_word
         #  BENT, the extra character will be skipped and we should be OK.
 
         my $word2 = $word;
-        if ( $word2 =~ /nt$/i ) {
+        if ( $word2 =~ /nt$/ ) {
 
-            $word2 =~ s/nt$/n'?t/i;
+            $word2 =~ s/nt$/n'?t/;
         }
 
         #  2020-1229: Add the names file first so that if we get a hit there,
-        #  but not in the dictionary file, we are still OK.
+        #  but not in the dictionary file, we are still OK. The -h option is
+        #  added to prevent the output from showing the file name the match was
+        #  found in. Hmm -- although, that could be useful information.
 
         #  2020-1230: Add the abbreviations file.
 
